@@ -1,0 +1,35 @@
+# Chump's Challenge
+# By Calvin Probst calvin.probst@gmail.com
+# https://github.com/calvinProbstSchool/chumpschallenge
+
+import pygame
+from pygame.sprite import *
+from pygame.locals import *
+
+
+class ChumpPlayer(Sprite):
+    def __init__(self):
+        Sprite.__init__(self)
+
+        self.image = pygame.image.load("DKDonkeyKongHesTheLeaderOfTheBunchYouKnowHimWellHesFinallyBackToKickSomeTailHisCoconutGunCanFireInSpurtsIfHeShootsYaItsGonnaHurtHesBiggerFasterAndStrongerTooHesTheFirstMemberOfTheDKCrewHuh.png")
+        self.rect = self.image.get_rect()
+
+class BasicTile(Sprite):
+    def __init__(self, boardX, boardY, imageFilename, tType):
+        Sprite.__init__(self)
+
+        self.image = pygame.image.load(imageFilename)
+        self.rect = self.image.get_rect()
+
+        self.bX = boardX
+        self.bY = boardY
+
+        self.tileType = tType
+
+class WallTile(BasicTile):
+    def __init__(self, boardX, boardY):
+        BasicTile.__init__(self, boardX, boardY, "The Name Of The Wall File when I make it", "WALL")
+
+class IceTile(BasicTile):
+    def __init__(self, boardX, boardY):
+        BasicTile.__init__(self, boardX, boardY, "The Name Of The Wall File when I make it", "ICE")
