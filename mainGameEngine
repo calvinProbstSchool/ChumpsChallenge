@@ -11,8 +11,10 @@ class ChumpPlayer(Sprite):
     def __init__(self):
         Sprite.__init__(self)
 
-        self.image = pygame.image.load("DKDonkeyKongHesTheLeaderOfTheBunchYouKnowHimWellHesFinallyBackToKickSomeTailHisCoconutGunCanFireInSpurtsIfHeShootsYaItsGonnaHurtHesBiggerFasterAndStrongerTooHesTheFirstMemberOfTheDKCrewHuh.png")
+        self.image = pygame.image.load(
+            "DKDonkeyKongHesTheLeaderOfTheBunchYouKnowHimWellHesFinallyBackToKickSomeTailHisCoconutGunCanFireInSpurtsIfHeShootsYaItsGonnaHurtHesBiggerFasterAndStrongerTooHesTheFirstMemberOfTheDKCrewHuh.png")
         self.rect = self.image.get_rect()
+
 
 class BasicTile(Sprite):
     def __init__(self, boardX, boardY, imageFilename, tType):
@@ -26,10 +28,79 @@ class BasicTile(Sprite):
 
         self.tileType = tType
 
+
 class WallTile(BasicTile):
     def __init__(self, boardX, boardY):
-        BasicTile.__init__(self, boardX, boardY, "The Name Of The Wall File when I make it", "WALL")
+        BasicTile.__init__(self, boardX, boardY, "shesABrickHouse.png", "W")
+
 
 class IceTile(BasicTile):
     def __init__(self, boardX, boardY):
-        BasicTile.__init__(self, boardX, boardY, "The Name Of The Wall File when I make it", "ICE")
+        BasicTile.__init__(self, boardX, boardY, "The Name Of The Wall File when I make it", "I")
+
+
+class WaterTile(BasicTile):
+    def __init__(self, boardX, boardY):
+        BasicTile.__init__(self, boardX, boardY, "vvaves(Kanye).png", "w")
+
+
+WINDOWSIZE = 600
+TILESIZE = 80
+FONTSIZE = 60
+FPS = 30
+
+WALL = "W"
+WATER = "w"
+ICE = "I"
+
+GREEN = (0, 0, 128)
+BLACK = (0, 0, 0)
+
+
+def main():
+    global FPSCLOCK, DISPLAYSURF, CHUMPFONT
+    pygame.init()
+    DISPLAYSURF = pygame.display.set_mode((WINDOWSIZE, WINDOWSIZE))
+    pygame.display.set_caption("Chump's Challenge")
+    FPSCLOCK = pygame.time.Clock()
+    CHUMPFONT = pygame.font.Font("./Jumpman.ttf", FONTSIZE)
+
+
+    tileBoard = getBoard(1)
+
+
+def getBoard(levelNum):
+    f = open(("level" + str(levelNum)), "r")
+    rows = f.readlines()
+    board = []
+    for row in rows:
+        TileRow = []
+        for x in str.split(row):
+            TileRow.append(x)
+        board.append(TileRow)
+    for x in len(board):
+        for y in len(board[x]):
+            board[x][y] = getTextToTile(board[x][y], x, y)
+
+
+def getTextToTile(tileStr, x, y):
+    if tileStr == WALL:
+        return WallTile(x, y)
+    elif tileStr == WATER
+
+def drawClock(new=False):
+    FPSCLOCK.tick(FPS)
+    timeNum = int(pygame.time.get_ticks() / 1000)
+    timeStr = str(int(timeNum % 60))
+    timeNum = timeNum - (timeNum % 60)
+    minnum = 0
+    while timeNum >= 60:
+        minnum += 1
+        timeNum -= 60
+    if len(timeStr) == 1:
+        timeStr = "0" + timeStr
+    timeStr = str(minnum) + ":" + timeStr
+    if new:
+        timeStr = "0:00"
+    timer = CHUMPFONT.render(timeStr, True, GREEN, BLACK)
+    DISPLAYSURF.blit(timer, (10, 10))
