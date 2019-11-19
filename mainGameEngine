@@ -29,6 +29,19 @@ class BasicTile(Sprite):
         self.tileType = tType
 
 
+class BasicItem(Sprite):
+    def __init__(self, boardX, boardY, imageFilename, itemType):
+        Sprite.__init__(self)
+
+        self.image = pygame.image.load(imageFilename)
+        self.rect = self.image.get_rect()
+
+        self.bX = boardX
+        self.bY = boardY
+
+        self.tileType = itemType
+
+
 class WallTile(BasicTile):
     def __init__(self, boardX, boardY):
         BasicTile.__init__(self, boardX, boardY, "shesABrickHouse.png", "W")
@@ -36,12 +49,48 @@ class WallTile(BasicTile):
 
 class IceTile(BasicTile):
     def __init__(self, boardX, boardY):
-        BasicTile.__init__(self, boardX, boardY, "The Name Of The Wall File when I make it", "I")
+        BasicTile.__init__(self, boardX, boardY, "iceIceBaby", "I")
 
 
 class WaterTile(BasicTile):
     def __init__(self, boardX, boardY):
         BasicTile.__init__(self, boardX, boardY, "vvaves(Kanye).png", "w")
+
+
+class DoorTile(BasicTile):
+    def __init__(self, boardX, boardY, keyNumber):
+        BasicTile.__init__(self, boardX, boardY, "jimMorrison.png", "D")
+
+        self.keyNum = keyNumber
+
+
+class EmptyTile(BasicTile):
+    def __init__(self, boardX, boardY):
+        BasicTile.__init__(self, boardX, boardY, "", "_")
+
+
+class HintTile(BasicTile):
+    def __init__(self, boardX, boardY):
+        BasicTile.__init__(self, boardX, boardY, "hintsAreForRealChumps.png", "H")
+
+
+class CrateTile(BasicTile):
+    def __init__(self, boardX, boardY):
+        BasicTile.__init__(self, boardX, boardY, "heartShapedBox.png", "B")
+
+
+class DarkTile(BasicTile):
+    def __init__(self, boardX, boardY):
+        BasicTile.__init__(self, boardX, boardY, "areYouAfraidOfTheDark.png", "d")
+
+
+class FireTile(BasicTile):
+    def __init__(self, boardX, boardY):
+        BasicTile.__init__(self, boardX, boardY, "burningFireOnTheDancefloor.png", "F")
+
+
+class FireShoesItem(BasicItem):
+    def __init__(self, boardX, boardY):
 
 
 WINDOWSIZE = 600
@@ -52,6 +101,13 @@ FPS = 30
 WALL = "W"
 WATER = "w"
 ICE = "I"
+DOOR = "D"
+DARK = "d"
+EMPTY = "_"
+HINT = "H"
+BOX = "B"
+FIRE = "F"
+
 
 GREEN = (0, 0, 128)
 BLACK = (0, 0, 0)
@@ -86,7 +142,18 @@ def getBoard(levelNum):
 def getTextToTile(tileStr, x, y):
     if tileStr == WALL:
         return WallTile(x, y)
-    elif tileStr == WATER
+    elif tileStr == WATER:
+        return WaterTile(x, y)
+    elif tileStr == ICE:
+        return IceTile(x, y)
+    elif tileStr == "0" or tileStr == "1" or tileStr == "2" or tileStr == "3":
+        return DoorTile(x, y, tileStr)
+    elif tileStr == EMPTY:
+        return EmptyTile(x, y)
+    elif tileStr == :
+        return Tile(x, y)
+    elif tileStr == :
+        return Tile(x, y)
 
 def drawClock(new=False):
     FPSCLOCK.tick(FPS)
