@@ -15,6 +15,9 @@ class ChumpPlayer(Sprite):
             "DKDonkeyKongHesTheLeaderOfTheBunchYouKnowHimWellHesFinallyBackToKickSomeTailHisCoconutGunCanFireInSpurtsIfHeShootsYaItsGonnaHurtHesBiggerFasterAndStrongerTooHesTheFirstMemberOfTheDKCrewHuh.png")
         self.rect = self.image.get_rect()
 
+        self.bX = -1
+        self.bY = -1
+
 
 class BasicTile(Sprite):
     def __init__(self, boardX, boardY, imageFilename, tType):
@@ -29,6 +32,10 @@ class BasicTile(Sprite):
         self.tileType = tType
 
 
+    def __str__(self):
+        return ("A " + self.tileType + " at " + str(self.bX) + ", " + str(self.bY) + ".")
+
+
 class BasicItem(Sprite):
     def __init__(self, boardX, boardY, imageFilename, itemType):
         Sprite.__init__(self)
@@ -39,7 +46,11 @@ class BasicItem(Sprite):
         self.bX = boardX
         self.bY = boardY
 
-        self.tileType = itemType
+        self.itemType = itemType
+
+
+    def __str__(self):
+        return ("A " + self.itemType + " at " + str(self.bX) + ", " + str(self.bY) + ".")
 
 
 class WallTile(BasicTile):
@@ -66,7 +77,7 @@ class DoorTile(BasicTile):
 
 class EmptyTile(BasicTile):
     def __init__(self, boardX, boardY):
-        BasicTile.__init__(self, boardX, boardY, "", "_")
+        BasicTile.__init__(self, boardX, boardY, "nullAndVoid.png", "_")
 
 
 class HintTile(BasicTile):
@@ -89,15 +100,31 @@ class FireTile(BasicTile):
         BasicTile.__init__(self, boardX, boardY, "burningFireOnTheDancefloor.png", "F")
 
 
+class BoxTile(BasicTile):
+    def __init__(self, boardX, boardY):
+        BasicTile.__init__(self, boardX, boardY, "heartShapedBox.png", "B")
+
+
+class GoalTile(BasicTile):
+    def __init__(self, boardX, boardY):
+        BasicTile.__init__(self, boardX, boardY, "", "G")
+
+
 class FireShoesItem(BasicItem):
     def __init__(self, boardX, boardY):
+        BasicItem.__init__(self, boardX, boardY, "pumpedUpKicks.png", "K")
 
 
-WINDOWSIZE = 600
+WINDOWSIZEX = 1900
+WINDOWSIZEY = 1000
+BOARDSIZE = 800
+MARGINSIZE = 100
 TILESIZE = 80
 FONTSIZE = 60
 FPS = 30
 
+PLAYER = "@"
+GOAL = "G"
 WALL = "W"
 WATER = "w"
 ICE = "I"
@@ -107,7 +134,10 @@ EMPTY = "_"
 HINT = "H"
 BOX = "B"
 FIRE = "F"
+SHOES = "K"
 
+PlayerX = -1
+PlayerY = -1
 
 GREEN = (0, 0, 128)
 BLACK = (0, 0, 0)
@@ -125,18 +155,21 @@ def main():
     tileBoard = getBoard(1)
 
 
+
 def getBoard(levelNum):
-    f = open(("level" + str(levelNum)), "r")
+    f = open(("level" + str(levelNum) + ".txt"), "r")
     rows = f.readlines()
     board = []
     for row in rows:
         TileRow = []
-        for x in str.split(row):
-            TileRow.append(x)
+        for x in row.split(","):
+            if not x== "\n":
+                TileRow.append(x)
         board.append(TileRow)
-    for x in len(board):
-        for y in len(board[x]):
+    for x in range(len(board)):
+        for y in range(len(board[x])):
             board[x][y] = getTextToTile(board[x][y], x, y)
+    return board
 
 
 def getTextToTile(tileStr, x, y):
@@ -150,10 +183,24 @@ def getTextToTile(tileStr, x, y):
         return DoorTile(x, y, tileStr)
     elif tileStr == EMPTY:
         return EmptyTile(x, y)
-    elif tileStr == :
-        return Tile(x, y)
-    elif tileStr == :
-        return Tile(x, y)
+    elif tileStr == DARK:
+        return DarkTile(x, y)
+    elif tileStr == HINT:
+        return HintTile(x, y)
+    elif tileStr == FIRE:
+        return FireTile(x, y)
+    elif tileStr == BOX:
+        return BoxTile(x, y)
+    elif tileStr == SHOES:
+        return FireShoesItem(x, y)
+    elif tileStr == PLAYER:
+        PlayerX = x
+        playerY = y
+        return EmptyTile(x, y)
+
+
+def drawBoard(board)
+
 
 def drawClock(new=False):
     FPSCLOCK.tick(FPS)
