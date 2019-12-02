@@ -115,9 +115,9 @@ class FireShoesItem(BasicItem):
         BasicItem.__init__(self, boardX, boardY, "pumpedUpKicks.png", "K")
 
 
-WINDOWSIZEX = 1900
-WINDOWSIZEY = 1000
-BOARDSIZE = 800
+WINDOWSIZEX = 1980
+WINDOWSIZEY = 1080
+BOARDSIZE = 880
 MARGINSIZE = 100
 TILESIZE = 80
 FONTSIZE = 60
@@ -144,16 +144,18 @@ BLACK = (0, 0, 0)
 
 
 def main():
-    global FPSCLOCK, DISPLAYSURF, CHUMPFONT
+    global FPSCLOCK, DISPLAYSURF, CHUMPFONT, SHOWNBOARD
     pygame.init()
     DISPLAYSURF = pygame.display.set_mode((WINDOWSIZE, WINDOWSIZE))
     pygame.display.set_caption("Chump's Challenge")
     FPSCLOCK = pygame.time.Clock()
     CHUMPFONT = pygame.font.Font("./Jumpman.ttf", FONTSIZE)
+    SHOWNBOARD = Group()
 
 
     tileBoard = getBoard(1)
 
+    while True:
 
 
 def getBoard(levelNum):
@@ -195,11 +197,36 @@ def getTextToTile(tileStr, x, y):
         return FireShoesItem(x, y)
     elif tileStr == PLAYER:
         PlayerX = x
-        playerY = y
+        PlayerY = y
         return EmptyTile(x, y)
 
 
-def drawBoard(board)
+def drawBoard(board):
+    lEdge = 0
+    rEdge = len(board[0])
+    tEdge = 0
+    bEdge = len(board)
+
+    if PlayerX > 3:
+        lEdge = PlayerX - 4
+    if PlayerX < len(board[0]) - 4:
+        rEdge = PlayerX + 4
+    if PlayerY > 3:
+        tEdge = PlayerY - 4
+    if PlayerY < len(board) - 4:
+        bEdge = PlayerY + 4
+    SHOWNBOARD.clear()
+    for y in range(tEdge, bEdge + 1):
+        for x in range(lEdge, rEdge + 1):
+            board[y][x].rect.x = boardToCoord(x - lEdge)
+            board[y][x].rect.y = boardToCoord(y - tEdge)
+            SHOWNBOARD.add(board[y][x])
+
+
+
+
+def boardToCoord(n):
+    return MARGINSIZE + (n * TILESIZE)
 
 
 def drawClock(new=False):
