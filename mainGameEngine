@@ -156,6 +156,7 @@ def main():
     tileBoard = getBoard(1)
 
     while True:
+         drawBoard(board)
 
 
 def getBoard(levelNum):
@@ -222,7 +223,7 @@ def drawBoard(board):
             board[y][x].rect.y = boardToCoord(y - tEdge)
             SHOWNBOARD.add(board[y][x])
 
-
+    SHOWNBOARD.draw(DISPLAYSURF)
 
 
 def boardToCoord(n):
