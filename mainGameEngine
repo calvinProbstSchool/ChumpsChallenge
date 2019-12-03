@@ -3,6 +3,7 @@
 # https://github.com/calvinProbstSchool/chumpschallenge
 
 import pygame
+import sys
 from pygame.sprite import *
 from pygame.locals import *
 
@@ -60,7 +61,7 @@ class WallTile(BasicTile):
 
 class IceTile(BasicTile):
     def __init__(self, boardX, boardY):
-        BasicTile.__init__(self, boardX, boardY, "iceIceBaby", "I")
+        BasicTile.__init__(self, boardX, boardY, "iceIceBaby.png", "I")
 
 
 class WaterTile(BasicTile):
@@ -141,23 +142,23 @@ DIRRIGHT = "RIGHT"
 DIRDOWN = "DOWN"
 DIRLEFT = "LEFT"
 
+playerX = -1
+playerY = -1
+
 
 GREEN = (0, 0, 128)
 BLACK = (0, 0, 0)
 
 
 def main():
-    global FPSCLOCK, DISPLAYSURF, CHUMPFONT, SHOWNBOARD
+    global FPSCLOCK, DISPLAYSURF, CHUMPFONT, SHOWNBOARD, CHUMP
     pygame.init()
     DISPLAYSURF = pygame.display.set_mode((WINDOWSIZEX, WINDOWSIZEY))
     pygame.display.set_caption("Chump's Challenge")
     FPSCLOCK = pygame.time.Clock()
     CHUMPFONT = pygame.font.Font("./Jumpman.ttf", FONTSIZE)
     SHOWNBOARD = Group()
-
-    PlayerX = -1
-    PlayerY = -1
-
+    CHUMP = ChumpPlayer()
 
     tileBoard = getBoard(1)
 
@@ -166,6 +167,7 @@ def main():
     gamePlaying = True
 
     while True:
+        DISPLAYSURF.fill(BLACK)
         drawBoard(tileBoard)
         pygame.display.update()
         FPSCLOCK.tick()
@@ -198,10 +200,10 @@ def main():
                 mouseDown = True
 
         if keyPress and gamePlaying:
-            movePlayer(tileBoard, keyDir, PlayerX, PlayerY)
+            movePlayer(tileBoard, keyDir)
 
         if gameWin(tileBoard):
-            nextLevel()
+            print("next level")
 
 
 
@@ -215,13 +217,14 @@ def getBoard(levelNum):
             if not x== "\n":
                 TileRow.append(x)
         board.append(TileRow)
-    for x in range(len(board)):
-        for y in range(len(board[x])):
-            board[x][y] = getTextToTile(board[x][y], x, y)
+    for y in range(len(board)):
+        for x in range(len(board[y])):
+            board[y][x] = getTextToTile(board[y][x], x, y)
     return board
 
 
 def getTextToTile(tileStr, x, y):
+    global playerX, playerY
     if tileStr == WALL:
         return WallTile(x, y)
     elif tileStr == WATER:
@@ -243,8 +246,8 @@ def getTextToTile(tileStr, x, y):
     elif tileStr == SHOES:
         return FireShoesItem(x, y)
     elif tileStr == PLAYER:
-        PlayerX = x
-        PlayerY = y
+        playerX = x
+        playerY = y
         return EmptyTile(x, y)
 
 
@@ -263,53 +266,62 @@ def tileInDir(x, y, dir):
         return (x + 1, y)
 
 
-def movePlayer(board, dir, x, y):
-    movePos = tileInDir(x, y, dir)
+def movePlayer(board, dir):
+    global playerX, playerY
+    movePos = tileInDir(playerX, playerY, dir)
     moveTile = board[movePos[1]][movePos[0]]
-    moveType = moveTile.type
+    moveType = moveTile.tileType
     if moveType == EMPTY:
-        PlayerX = movePos[0]
-        PlayerY = movePos[1]
+        playerX = movePos[0]
+        playerY = movePos[1]
     elif moveType == BOX:
         boxMovePos = tileInDir(movePos[0], movePos[1], dir)
         boxMoveTile = board[boxMovePos[1]][boxMovePos[0]]
-        boxMoveType = boxMoveTile.type
+        boxMoveType = boxMoveTile.tileType
         if boxMoveType == EMPTY:
-            PlayerX = movePos[0]
-            PlayerY = movePos[1]
+            playerX = movePos[0]
+            playerY = movePos[1]
             board[movePos[1]][movePos[0]].x, board[movePos[1]][movePos[0]].y = boxMovePos
             board[boxMovePos[1]][boxMovePos[0]].x, board[boxMovePos[1]][boxMovePos[0]].y = movePos
             placeholderTile = board[movePos[1]][movePos[0]]
             board[movePos[1]][movePos[0]] = board[boxMovePos[1]][boxMovePos[0]]
             board[boxMovePos[1]][boxMovePos[0]] = placeholderTile
         elif boxMoveType == FIRE:
-            PlayerX = movePos[0]
-            PlayerY = movePos[1]
+            playerX = movePos[0]
+            playerY = movePos[1]
             board[movePos[1]][movePos[0]] = EmptyTile(movePos[0], movePos[1])
             board[boxMovePos[1]][boxMovePos[0]] = EmptyTile(boxMovePos[0], boxMovePos[1])
 
 
 def drawBoard(board):
+    global playerX, playerY
     lEdge = 0
     rEdge = len(board[0])
     tEdge = 0
     bEdge = len(board)
 
-    if PlayerX > 3:
-        lEdge = PlayerX - 4
-    if PlayerX < len(board[0]) - 4:
-        rEdge = PlayerX + 4
-    if PlayerY > 3:
-        tEdge = PlayerY - 4
-    if PlayerY < len(board) - 4:
-        bEdge = PlayerY + 4
+    if playerX > 3:
+        lEdge = playerX - 4
+
+    if playerX < len(board[0]) - 4:
+        rEdge = playerX + 5
+
+    if playerY > 3:
+        tEdge = playerY - 4
+
+    if playerY < len(board) - 4:
+        bEdge = playerY + 5
+
     SHOWNBOARD.empty()
-    for y in range(tEdge, bEdge + 1):
-        for x in range(lEdge, rEdge + 1):
+    CHUMP.rect.x = boardToCoord(playerX - lEdge)
+    CHUMP.rect.y = boardToCoord(playerY - tEdge)
+    SHOWNBOARD.add(CHUMP)
+    for y in range(tEdge, bEdge):
+        for x in range(lEdge, rEdge):
             board[y][x].rect.x = boardToCoord(x - lEdge)
             board[y][x].rect.y = boardToCoord(y - tEdge)
             SHOWNBOARD.add(board[y][x])
-
+    drawClock()
     SHOWNBOARD.draw(DISPLAYSURF)
 
 
@@ -332,7 +344,7 @@ def drawClock(new=False):
     if new:
         timeStr = "0:00"
     timer = CHUMPFONT.render(timeStr, True, GREEN, BLACK)
-    DISPLAYSURF.blit(timer, (10, 10))
+    DISPLAYSURF.blit(timer, ((2 * MARGINSIZE) + BOARDSIZE, 10))
 
 
 main()
