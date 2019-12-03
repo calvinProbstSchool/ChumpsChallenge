@@ -45,8 +45,8 @@ class BasicItem(Sprite):
 
         self.bX = boardX
         self.bY = boardY
-
         self.itemType = itemType
+        self.tileType = "_"
 
 
     def __str__(self):
@@ -136,8 +136,11 @@ BOX = "B"
 FIRE = "F"
 SHOES = "K"
 
-PlayerX = -1
-PlayerY = -1
+DIRUP = "UP"
+DIRRIGHT = "RIGHT"
+DIRDOWN = "DOWN"
+DIRLEFT = "LEFT"
+
 
 GREEN = (0, 0, 128)
 BLACK = (0, 0, 0)
@@ -146,17 +149,60 @@ BLACK = (0, 0, 0)
 def main():
     global FPSCLOCK, DISPLAYSURF, CHUMPFONT, SHOWNBOARD
     pygame.init()
-    DISPLAYSURF = pygame.display.set_mode((WINDOWSIZE, WINDOWSIZE))
+    DISPLAYSURF = pygame.display.set_mode((WINDOWSIZEX, WINDOWSIZEY))
     pygame.display.set_caption("Chump's Challenge")
     FPSCLOCK = pygame.time.Clock()
     CHUMPFONT = pygame.font.Font("./Jumpman.ttf", FONTSIZE)
     SHOWNBOARD = Group()
 
+    PlayerX = -1
+    PlayerY = -1
+
 
     tileBoard = getBoard(1)
 
+    mousex = 0
+    mousey = 0
+    gamePlaying = True
+
     while True:
-         drawBoard(board)
+        drawBoard(tileBoard)
+        pygame.display.update()
+        FPSCLOCK.tick()
+
+        mouseDown = False
+        keyPress = False
+        keyDir = ""
+
+        for event in pygame.event.get():
+            if event.type == QUIT or (event.type == KEYUP and event.key == K_ESCAPE):
+                pygame.quit()
+                sys.exit()
+            elif event.type == KEYUP:
+                if event.key == K_LEFT:
+                    keyPress = True
+                    keyDir = DIRLEFT
+                elif event.key == K_RIGHT:
+                    keyPress = True
+                    keyDir = DIRRIGHT
+                elif event.key == K_UP:
+                    keyPress = True
+                    keyDir = DIRUP
+                elif event.key == K_DOWN:
+                    keyPress = True
+                    keyDir = DIRDOWN
+            elif event.type == MOUSEMOTION:
+                mousex, mousey = event.pos
+            elif event.type == MOUSEBUTTONUP:
+                mousex, mousey = event.pos
+                mouseDown = True
+
+        if keyPress and gamePlaying:
+            movePlayer(tileBoard, keyDir, PlayerX, PlayerY)
+
+        if gameWin(tileBoard):
+            nextLevel()
+
 
 
 def getBoard(levelNum):
@@ -202,6 +248,47 @@ def getTextToTile(tileStr, x, y):
         return EmptyTile(x, y)
 
 
+def gameWin(board):
+    return False
+
+
+def tileInDir(x, y, dir):
+    if dir == DIRDOWN:
+        return (x, y + 1)
+    elif dir == DIRUP:
+        return (x, y - 1)
+    elif dir == DIRLEFT:
+        return (x - 1, y)
+    elif dir == DIRRIGHT:
+        return (x + 1, y)
+
+
+def movePlayer(board, dir, x, y):
+    movePos = tileInDir(x, y, dir)
+    moveTile = board[movePos[1]][movePos[0]]
+    moveType = moveTile.type
+    if moveType == EMPTY:
+        PlayerX = movePos[0]
+        PlayerY = movePos[1]
+    elif moveType == BOX:
+        boxMovePos = tileInDir(movePos[0], movePos[1], dir)
+        boxMoveTile = board[boxMovePos[1]][boxMovePos[0]]
+        boxMoveType = boxMoveTile.type
+        if boxMoveType == EMPTY:
+            PlayerX = movePos[0]
+            PlayerY = movePos[1]
+            board[movePos[1]][movePos[0]].x, board[movePos[1]][movePos[0]].y = boxMovePos
+            board[boxMovePos[1]][boxMovePos[0]].x, board[boxMovePos[1]][boxMovePos[0]].y = movePos
+            placeholderTile = board[movePos[1]][movePos[0]]
+            board[movePos[1]][movePos[0]] = board[boxMovePos[1]][boxMovePos[0]]
+            board[boxMovePos[1]][boxMovePos[0]] = placeholderTile
+        elif boxMoveType == FIRE:
+            PlayerX = movePos[0]
+            PlayerY = movePos[1]
+            board[movePos[1]][movePos[0]] = EmptyTile(movePos[0], movePos[1])
+            board[boxMovePos[1]][boxMovePos[0]] = EmptyTile(boxMovePos[0], boxMovePos[1])
+
+
 def drawBoard(board):
     lEdge = 0
     rEdge = len(board[0])
@@ -216,7 +303,7 @@ def drawBoard(board):
         tEdge = PlayerY - 4
     if PlayerY < len(board) - 4:
         bEdge = PlayerY + 4
-    SHOWNBOARD.clear()
+    SHOWNBOARD.empty()
     for y in range(tEdge, bEdge + 1):
         for x in range(lEdge, rEdge + 1):
             board[y][x].rect.x = boardToCoord(x - lEdge)
@@ -246,3 +333,6 @@ def drawClock(new=False):
         timeStr = "0:00"
     timer = CHUMPFONT.render(timeStr, True, GREEN, BLACK)
     DISPLAYSURF.blit(timer, (10, 10))
+
+
+main()
