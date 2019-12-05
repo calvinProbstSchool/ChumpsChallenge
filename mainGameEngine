@@ -37,17 +37,11 @@ class BasicTile(Sprite):
         return ("A " + self.tileType + " at " + str(self.bX) + ", " + str(self.bY) + ".")
 
 
-class BasicItem(Sprite):
+class BasicItem(BasicTile):
     def __init__(self, boardX, boardY, imageFilename, itemType):
-        Sprite.__init__(self)
+        BasicTile.__init__(self, boardX, boardY, imageFilename, "_")
 
-        self.image = pygame.image.load(imageFilename)
-        self.rect = self.image.get_rect()
-
-        self.bX = boardX
-        self.bY = boardY
         self.itemType = itemType
-        self.tileType = "_"
 
 
     def __str__(self):
@@ -151,16 +145,24 @@ BLACK = (0, 0, 0)
 
 
 def main():
-    global FPSCLOCK, DISPLAYSURF, CHUMPFONT, SHOWNBOARD, CHUMP
+    global FPSCLOCK, DISPLAYSURF, CHUMPFONT, SHOWNBOARD, CHUMP, SHOWNBOARDTOPLAYER
     pygame.init()
     DISPLAYSURF = pygame.display.set_mode((WINDOWSIZEX, WINDOWSIZEY))
     pygame.display.set_caption("Chump's Challenge")
     FPSCLOCK = pygame.time.Clock()
     CHUMPFONT = pygame.font.Font("./Jumpman.ttf", FONTSIZE)
     SHOWNBOARD = Group()
+    SHOWNBOARDTOPLAYER = Group()
     CHUMP = ChumpPlayer()
 
     tileBoard = getBoard(1)
+    inventory = []
+    for i in range(0, 3):
+        row = []
+        for j in range(0, 3):
+            row.append(None)
+        inventory.append(row)
+
 
     mousex = 0
     mousey = 0
@@ -281,8 +283,8 @@ def movePlayer(board, dir):
         if boxMoveType == EMPTY:
             playerX = movePos[0]
             playerY = movePos[1]
-            board[movePos[1]][movePos[0]].x, board[movePos[1]][movePos[0]].y = boxMovePos
-            board[boxMovePos[1]][boxMovePos[0]].x, board[boxMovePos[1]][boxMovePos[0]].y = movePos
+            board[movePos[1]][movePos[0]].bX, board[movePos[1]][movePos[0]].bY = boxMovePos
+            board[boxMovePos[1]][boxMovePos[0]].bX, board[boxMovePos[1]][boxMovePos[0]].bY = movePos
             placeholderTile = board[movePos[1]][movePos[0]]
             board[movePos[1]][movePos[0]] = board[boxMovePos[1]][boxMovePos[0]]
             board[boxMovePos[1]][boxMovePos[0]] = placeholderTile
@@ -313,16 +315,19 @@ def drawBoard(board):
         bEdge = playerY + 5
 
     SHOWNBOARD.empty()
-    CHUMP.rect.x = boardToCoord(playerX - lEdge)
-    CHUMP.rect.y = boardToCoord(playerY - tEdge)
-    SHOWNBOARD.add(CHUMP)
+    SHOWNBOARDTOPLAYER.empty()
+
     for y in range(tEdge, bEdge):
         for x in range(lEdge, rEdge):
             board[y][x].rect.x = boardToCoord(x - lEdge)
             board[y][x].rect.y = boardToCoord(y - tEdge)
             SHOWNBOARD.add(board[y][x])
     drawClock()
+    CHUMP.rect.x = boardToCoord(playerX - lEdge)
+    CHUMP.rect.y = boardToCoord(playerY - tEdge)
+    SHOWNBOARDTOPLAYER.add(CHUMP)
     SHOWNBOARD.draw(DISPLAYSURF)
+    SHOWNBOARDTOPLAYER.draw(DISPLAYSURF)
 
 
 def boardToCoord(n):
