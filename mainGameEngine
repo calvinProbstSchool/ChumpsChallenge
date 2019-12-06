@@ -94,6 +94,9 @@ class FireTile(BasicTile):
     def __init__(self, boardX, boardY):
         BasicTile.__init__(self, boardX, boardY, "burningFireOnTheDancefloor.png", "F")
 
+#It takes 7:12 to reach the bottom give or take a bit with 2.1k tiles
+#
+#
 
 class BoxTile(BasicTile):
     def __init__(self, boardX, boardY):
@@ -112,7 +115,7 @@ class FireShoesItem(BasicItem):
 
 WINDOWSIZEX = 1980
 WINDOWSIZEY = 1080
-BOARDSIZE = 880
+BOARDSIZE = 720
 MARGINSIZE = 100
 TILESIZE = 80
 FONTSIZE = 60
@@ -145,7 +148,7 @@ BLACK = (0, 0, 0)
 
 
 def main():
-    global FPSCLOCK, DISPLAYSURF, CHUMPFONT, SHOWNBOARD, CHUMP, SHOWNBOARDTOPLAYER
+    global FPSCLOCK, DISPLAYSURF, CHUMPFONT, SHOWNBOARD, CHUMP, SHOWNBOARDTOPLAYER, INVENTORY
     pygame.init()
     DISPLAYSURF = pygame.display.set_mode((WINDOWSIZEX, WINDOWSIZEY))
     pygame.display.set_caption("Chump's Challenge")
@@ -156,12 +159,12 @@ def main():
     CHUMP = ChumpPlayer()
 
     tileBoard = getBoard(1)
-    inventory = []
+    INVENTORY = []
     for i in range(0, 3):
         row = []
         for j in range(0, 3):
             row.append(None)
-        inventory.append(row)
+        INVENTORY.append(row)
 
 
     mousex = 0
@@ -326,6 +329,7 @@ def drawBoard(board):
     CHUMP.rect.x = boardToCoord(playerX - lEdge)
     CHUMP.rect.y = boardToCoord(playerY - tEdge)
     SHOWNBOARDTOPLAYER.add(CHUMP)
+    pygame.draw.rect(DISPLAYSURF, (0, 100, 40), (MARGINSIZE, MARGINSIZE, BOARDSIZE, BOARDSIZE))
     SHOWNBOARD.draw(DISPLAYSURF)
     SHOWNBOARDTOPLAYER.draw(DISPLAYSURF)
 
