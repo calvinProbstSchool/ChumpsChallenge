@@ -31,6 +31,7 @@ class BasicTile(Sprite):
         self.bY = boardY
 
         self.tileType = tType
+        self.itemType = None
 
 
     def __str__(self):
@@ -113,6 +114,12 @@ class FireShoesItem(BasicItem):
         BasicItem.__init__(self, boardX, boardY, "pumpedUpKicks.png", "K")
 
 
+class KeyItem(BasicItem):
+    def __init__(self, boardX, boardY, keyN):
+        BasicItem.__init__(self, boardX, boardY, "key1.png", "k")
+        self.keyNum = keyN
+
+
 WINDOWSIZEX = 1980
 WINDOWSIZEY = 1080
 BOARDSIZE = 720
@@ -121,7 +128,7 @@ TILESIZE = 80
 FONTSIZE = 60
 FPS = 30
 
-PLAYER = "@"
+PLAYER = "+"
 GOAL = "G"
 WALL = "W"
 WATER = "w"
@@ -133,6 +140,8 @@ HINT = "H"
 BOX = "B"
 FIRE = "F"
 SHOES = "K"
+KEY1 = "!"
+
 
 DIRUP = "UP"
 DIRRIGHT = "RIGHT"
@@ -158,7 +167,7 @@ def main():
     SHOWNBOARDTOPLAYER = Group()
     CHUMP = ChumpPlayer()
 
-    tileBoard = getBoard(1)
+    tileBoard = getBoard(2)
     INVENTORY = []
     for i in range(0, 3):
         row = []
@@ -228,6 +237,25 @@ def getBoard(levelNum):
     return board
 
 
+def getEmptyInventorySpace():
+    global INVENTORY
+    for y in range(0, 3):
+        for x in range(0, 3):
+            if INVENTORY[y][x] is None:
+                return x, y
+
+    INVENTORY[0][0] = None
+    for y in range(0, 3):
+        for x in range(0, 3):
+            if x == 2 and not y == 2:
+                INVENTORY[y][x] = INVENTORY[y + 1][0]
+            elif not (x == 2 and y == 2):
+                INVENTORY[y][x] = INVENTORY[y][x + 1]
+    INVENTORY[2][2] = None
+    return (2, 2)
+
+
+
 def getTextToTile(tileStr, x, y):
     global playerX, playerY
     if tileStr == WALL:
@@ -250,6 +278,8 @@ def getTextToTile(tileStr, x, y):
         return BoxTile(x, y)
     elif tileStr == SHOES:
         return FireShoesItem(x, y)
+    elif tileStr == KEY1:
+        return KeyItem(x, y, 1)
     elif tileStr == PLAYER:
         playerX = x
         playerY = y
@@ -272,13 +302,17 @@ def tileInDir(x, y, dir):
 
 
 def movePlayer(board, dir):
-    global playerX, playerY
+    global playerX, playerY, INVENTORY
     movePos = tileInDir(playerX, playerY, dir)
     moveTile = board[movePos[1]][movePos[0]]
     moveType = moveTile.tileType
     if moveType == EMPTY:
         playerX = movePos[0]
         playerY = movePos[1]
+        if not moveTile.itemType is None:
+            invX, invY = getEmptyInventorySpace()
+            INVENTORY[invY][invX] = moveTile
+            board[movePos[1]][movePos[0]] = EmptyTile(movePos[0], movePos[1])
     elif moveType == BOX:
         boxMovePos = tileInDir(movePos[0], movePos[1], dir)
         boxMoveTile = board[boxMovePos[1]][boxMovePos[0]]
@@ -299,7 +333,7 @@ def movePlayer(board, dir):
 
 
 def drawBoard(board):
-    global playerX, playerY
+    global playerX, playerY, INVENTORY
     lEdge = 0
     rEdge = len(board[0])
     tEdge = 0
@@ -325,6 +359,11 @@ def drawBoard(board):
             board[y][x].rect.x = boardToCoord(x - lEdge)
             board[y][x].rect.y = boardToCoord(y - tEdge)
             SHOWNBOARD.add(board[y][x])
+    for y in range(0, 3):
+        for x in range(0, 3):
+            if not INVENTORY[y][x] is None:
+                INVENTORY[y][x].rect.x, INVENTORY[y][x].rect.y = invToCoord(x, y)
+                SHOWNBOARD.add(INVENTORY[y][x])
     drawClock()
     CHUMP.rect.x = boardToCoord(playerX - lEdge)
     CHUMP.rect.y = boardToCoord(playerY - tEdge)
@@ -336,6 +375,10 @@ def drawBoard(board):
 
 def boardToCoord(n):
     return MARGINSIZE + (n * TILESIZE)
+
+
+def invToCoord(x, y):
+    return ((MARGINSIZE * 2) + BOARDSIZE + (x * TILESIZE + 20)), (MARGINSIZE + (y * TILESIZE + 20))
 
 
 def drawClock(new=False):
