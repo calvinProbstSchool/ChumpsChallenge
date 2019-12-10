@@ -68,7 +68,7 @@ class DoorTile(BasicTile):
     def __init__(self, boardX, boardY, keyNumber):
         BasicTile.__init__(self, boardX, boardY, "jimMorrison.png", "D")
 
-        self.keyNum = keyNumber
+        self.keyNum = int(keyNumber)
 
 
 class EmptyTile(BasicTile):
@@ -140,7 +140,10 @@ HINT = "H"
 BOX = "B"
 FIRE = "F"
 SHOES = "K"
+KEY = "k"
 KEY1 = "!"
+KEY2 = "@"
+KEY3 = "#"
 
 
 DIRUP = "UP"
@@ -264,7 +267,7 @@ def getTextToTile(tileStr, x, y):
         return WaterTile(x, y)
     elif tileStr == ICE:
         return IceTile(x, y)
-    elif tileStr == "0" or tileStr == "1" or tileStr == "2" or tileStr == "3":
+    elif tileStr == "1" or tileStr == "2" or tileStr == "3":
         return DoorTile(x, y, tileStr)
     elif tileStr == EMPTY:
         return EmptyTile(x, y)
@@ -280,6 +283,10 @@ def getTextToTile(tileStr, x, y):
         return FireShoesItem(x, y)
     elif tileStr == KEY1:
         return KeyItem(x, y, 1)
+    elif tileStr == KEY2:
+        return KeyItem(x, y, 2)
+    elif tileStr == KEY3:
+        return KeyItem(x, y, 3)
     elif tileStr == PLAYER:
         playerX = x
         playerY = y
@@ -330,6 +337,30 @@ def movePlayer(board, dir):
             playerY = movePos[1]
             board[movePos[1]][movePos[0]] = EmptyTile(movePos[0], movePos[1])
             board[boxMovePos[1]][boxMovePos[0]] = EmptyTile(boxMovePos[0], boxMovePos[1])
+    elif moveType == DOOR:
+        openNum = moveTile.keyNum
+        for y in range(0, 3):
+            for x in range(0, 3):
+                itemTile = INVENTORY[y][x]
+                if not itemTile is None:
+                    if itemTile.itemType == KEY:
+                        if itemTile.keyNum == openNum:
+                            board[movePos[1]][movePos[0]] = EmptyTile(movePos[0], movePos[1])
+                            INVENTORY[y][x] = None
+                            for x1 in range(x, 3):
+                                if x1 == 2 and not y == 2:
+                                    INVENTORY[y][x1] = INVENTORY[y + 1][0]
+                                elif not (x1 == 2 and y == 2):
+                                    INVENTORY[y][x1] = INVENTORY[y][x1 + 1]
+                            for y1 in range(y + 1, 3):
+                                for x1 in range(0, 3):
+                                    if x1 == 2 and not y1 == 2:
+                                        INVENTORY[y1][x1] = INVENTORY[y1 + 1][0]
+                                    elif not (x1 == 2 and y1 == 2):
+                                        INVENTORY[y1][x1] = INVENTORY[y1][x1 + 1]
+                            return
+
+
 
 
 def drawBoard(board):
