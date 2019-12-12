@@ -95,7 +95,7 @@ class FireTile(BasicTile):
     def __init__(self, boardX, boardY):
         BasicTile.__init__(self, boardX, boardY, "burningFireOnTheDancefloor.png", "F")
 
-#It takes 7:12 to reach the bottom give or take a bit with 2.1k tiles
+#It takes 24:36 to reach the bottom give or take a bit with 4.2k tiles
 #
 #
 
@@ -126,7 +126,7 @@ BOARDSIZE = 720
 MARGINSIZE = 100
 TILESIZE = 80
 FONTSIZE = 60
-FPS = 30
+FPS = 20
 
 PLAYER = "+"
 GOAL = "G"
@@ -159,8 +159,8 @@ GREEN = (0, 0, 128)
 BLACK = (0, 0, 0)
 
 
-def main():
-    global FPSCLOCK, DISPLAYSURF, CHUMPFONT, SHOWNBOARD, CHUMP, SHOWNBOARDTOPLAYER, INVENTORY
+def main(level=1):
+    global FPSCLOCK, DISPLAYSURF, CHUMPFONT, SHOWNBOARD, CHUMP, SHOWNBOARDTOPLAYER, INVENTORY, SCORE
     pygame.init()
     DISPLAYSURF = pygame.display.set_mode((WINDOWSIZEX, WINDOWSIZEY))
     pygame.display.set_caption("Chump's Challenge")
@@ -170,7 +170,7 @@ def main():
     SHOWNBOARDTOPLAYER = Group()
     CHUMP = ChumpPlayer()
 
-    tileBoard = getBoard(2)
+    tileBoard = getBoard(level)
     INVENTORY = []
     for i in range(0, 3):
         row = []
@@ -178,6 +178,14 @@ def main():
             row.append(None)
         INVENTORY.append(row)
 
+    scoreStart = 0
+    if level == 1:
+        scoreStart = 1537
+    elif level == 2:
+        scoreStart = 540
+    elif level == 3:
+        scoreStart = 600
+    SCORE = scoreStart
 
     mousex = 0
     mousey = 0
@@ -192,6 +200,8 @@ def main():
         mouseDown = False
         keyPress = False
         keyDir = ""
+
+        SCORE = scoreStart - int(pygame.time.get_ticks() / 1000)
 
         for event in pygame.event.get():
             if event.type == QUIT or (event.type == KEYUP and event.key == K_ESCAPE):
@@ -332,7 +342,7 @@ def movePlayer(board, dir):
             placeholderTile = board[movePos[1]][movePos[0]]
             board[movePos[1]][movePos[0]] = board[boxMovePos[1]][boxMovePos[0]]
             board[boxMovePos[1]][boxMovePos[0]] = placeholderTile
-        elif boxMoveType == FIRE:
+        elif boxMoveType == FIRE or boxMoveType == WATER:
             playerX = movePos[0]
             playerY = movePos[1]
             board[movePos[1]][movePos[0]] = EmptyTile(movePos[0], movePos[1])
@@ -427,6 +437,8 @@ def drawClock(new=False):
     if new:
         timeStr = "0:00"
     timer = CHUMPFONT.render(timeStr, True, GREEN, BLACK)
+    scoreText = CHUMPFONT.render(str(SCORE), True, GREEN, BLACK)
+    DISPLAYSURF.blit(scoreText, ((2 * MARGINSIZE) + BOARDSIZE + 100, 10))
     DISPLAYSURF.blit(timer, ((2 * MARGINSIZE) + BOARDSIZE, 10))
 
 
