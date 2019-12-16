@@ -8,6 +8,9 @@ from pygame.sprite import *
 from pygame.locals import *
 
 
+BLANKSURF = pygame.Surface((80, 80))
+BLANKSURF.set_alpha(0)
+
 class ChumpPlayer(Sprite):
     def __init__(self):
         Sprite.__init__(self)
@@ -75,9 +78,8 @@ class EmptyTile(Sprite):
     def __init__(self, boardX, boardY):
         Sprite.__init__(self)
 
-        self.image = pygame.Surface((80, 80))
-        self.image.set_alpha(0)
-        self.rect = self.image.get_rect()
+        self.image = BLANKSURF
+        self.rect = pygame.Rect(0, 0, 80, 80)
 
         self.bX = boardX
         self.bY = boardY
@@ -122,6 +124,10 @@ class GoalTile(BasicTile):
     def __init__(self, boardX, boardY):
         BasicTile.__init__(self, boardX, boardY, "2021ForJamesonJKLmao.png", "G")
 
+class MonsterTile(BasicTile):
+    def __init__(self, boardX, boardY):
+        BasicTile.__init__(self, boardX, boardY, "theOneThingWorseThanAChild.png", "K")
+
 
 class FireShoesItem(BasicItem):
     def __init__(self, boardX, boardY):
@@ -142,6 +148,7 @@ TILESIZE = 80
 FONTSIZE = 60
 FPS = 20
 
+
 PLAYER = "+"
 GOAL = "G"
 WALL = "W"
@@ -158,25 +165,30 @@ KEY = "k"
 KEY1 = "!"
 KEY2 = "@"
 KEY3 = "#"
+MONSTER = "M"
 
 
-DIRUP = "UP"
-DIRRIGHT = "RIGHT"
-DIRDOWN = "DOWN"
-DIRLEFT = "LEFT"
+DIRUP = 0.5
+DIRRIGHT = 1
+DIRDOWN = -0.5
+DIRLEFT = -1
 
 playerX = -1
 playerY = -1
 
+monsterX = -1
+monsterY = -1
+MonsterHere = False
 
+WATERSINKS = []
 
 GREEN = (0, 0, 128)
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 
 
-def main(level=2):
-    global FPSCLOCK, DISPLAYSURF, CHUMPFONT, SHOWNBOARD, CHUMP, SHOWNBOARDTOPLAYER, INVENTORY, SCORE, DODEATH, PRINTEDTIMEDIFF
+def main(level=1):
+    global FPSCLOCK, DISPLAYSURF, CHUMPFONT, SHOWNBOARD, CHUMP, SHOWNBOARDTOPLAYER, INVENTORY, SCORE, DODEATH, PRINTEDTIMEDIFF, WATERSINKS
     pygame.init()
     DISPLAYSURF = pygame.display.set_mode((WINDOWSIZEX, WINDOWSIZEY))
     pygame.display.set_caption("Chump's Challenge")
@@ -220,7 +232,7 @@ def main(level=2):
 
         mouseDown = False
         keyPress = False
-        keyDir = ""
+        keyDir = 0
 
         SCORE = scoreStart - int(pygame.time.get_ticks() / 1000)
 
@@ -251,7 +263,7 @@ def main(level=2):
                 mouseDown = True
 
         if keyPress and gamePlaying:
-            movePlayer(tileBoard, keyDir)
+            movePlayer(tileBoard, keyDir, level)
 
         if gameWin(tileBoard):
             gameNext(level)
@@ -273,6 +285,21 @@ def gameEnd(levelNum):
             elif event.type == KEYUP:
                 main(levelNum)
 
+def gameHint(board, hintText):
+    drawBoard(board)
+    pygame.display.update()
+    FPSCLOCK.tick()
+    endGameLine1 = CHUMPFONT.render(hintText, True, GREEN, WHITE)
+    DISPLAYSURF.blit(endGameLine1, (100, 100))
+    pygame.display.update()
+    bpress = False
+    while not bpress:
+        for event in pygame.event.get():
+            if event.type == QUIT or (event.type == KEYUP and event.key == K_ESCAPE):
+                pygame.quit()
+                sys.exit()
+            elif event.type == KEYUP:
+                bpress = True
 
 def gameNext(levelNum):
     global PRINTEDTIMEDIFF
@@ -345,7 +372,7 @@ def getEmptyInventorySpace():
 
 
 def getTextToTile(tileStr, x, y):
-    global playerX, playerY
+    global playerX, playerY, monsterX, monsterY, MonsterHere
     if tileStr == WALL:
         return WallTile(x, y)
     elif tileStr == WATER:
@@ -378,6 +405,11 @@ def getTextToTile(tileStr, x, y):
         playerX = x
         playerY = y
         return EmptyTile(x, y)
+    elif tileStr == MONSTER:
+        monsterX = x
+        monsterY = y
+        MonsterHere = True
+        return MonsterTile(x, y)
 
 
 def gameWin(board):
@@ -405,22 +437,47 @@ def kicksInInv():
     return False
 
 
-def movePlayer(board, dir):
-    global playerX, playerY, INVENTORY, DODEATH
+def movePlayer(board, dir, levelNum):
+    global playerX, playerY, INVENTORY, DODEATH, WATERSINKS, monsterY, monsterX, MonsterHere
     movePos = tileInDir(playerX, playerY, dir)
     moveTile = board[movePos[1]][movePos[0]]
     moveType = moveTile.tileType
-    if moveType == EMPTY or moveType == GOAL or (moveType == FIRE and kicksInInv()):
+    for sitch in WATERSINKS:
+        sitch[2] = sitch[2] - 1
+        if sitch[2] < 1:
+            board[sitch[1]][sitch[0]] = sitch[3]
+            WATERSINKS.remove(sitch)
+    if MonsterHere:
+        if abs(playerY - monsterY) > abs(playerX - monsterX):
+            if playerY > monsterY:
+                dirMons = DIRDOWN
+            else:
+                dirMons = DIRUP
+        else:
+            if playerX > monsterX:
+                dirMons = DIRRIGHT
+            else:
+                dirMons = DIRLEFT
+
+        monsMovePos = tileInDir(monsterX, monsterY, dirMons)
+        phold = board[monsterY][monsterX]
+        board[monsterY][monsterX] = EmptyTile(monsterX, monsterY)
+        board[monsMovePos[1]][monsMovePos[0]] = phold
+        monsterX = monsMovePos[0]
+        monsterY = monsMovePos[1]
+    if (playerY == monsterY and playerX == monsterX):
+        DODEATH = True
+    elif (moveType == FIRE and not kicksInInv()) or moveType == WATER:
+        playerX = movePos[0]
+        playerY = movePos[1]
+        DODEATH = True
+    elif moveType == EMPTY or moveType == GOAL or (moveType == FIRE and kicksInInv()):
         playerX = movePos[0]
         playerY = movePos[1]
         if not moveTile.itemType is None:
             invX, invY = getEmptyInventorySpace()
             INVENTORY[invY][invX] = moveTile
             board[movePos[1]][movePos[0]] = EmptyTile(movePos[0], movePos[1])
-    elif (moveType == FIRE and not kicksInInv()) or moveType == WATER:
-        playerX = movePos[0]
-        playerY = movePos[1]
-        DODEATH = True
     elif moveType == BOX:
         boxMovePos = tileInDir(movePos[0], movePos[1], dir)
         boxMoveTile = board[boxMovePos[1]][boxMovePos[0]]
@@ -433,12 +490,25 @@ def movePlayer(board, dir):
             placeholderTile = board[movePos[1]][movePos[0]]
             board[movePos[1]][movePos[0]] = board[boxMovePos[1]][boxMovePos[0]]
             board[boxMovePos[1]][boxMovePos[0]] = placeholderTile
-        elif boxMoveType == FIRE or boxMoveType == WATER:
+        elif boxMoveType == FIRE:
             playerX = movePos[0]
             playerY = movePos[1]
             board[movePos[1]][movePos[0]] = EmptyTile(movePos[0], movePos[1])
             board[boxMovePos[1]][boxMovePos[0]] = EmptyTile(boxMovePos[0], boxMovePos[1])
-    elif moveType == DOOR:
+        elif boxMoveType == WATER:
+            playerX = movePos[0]
+            playerY = movePos[1]
+            WATERSINKS.append([boxMovePos[0], boxMovePos[1], 15, board[boxMovePos[1]][boxMovePos[0]]])
+            board[movePos[1]][movePos[0]] = EmptyTile(movePos[0], movePos[1])
+            board[boxMovePos[1]][boxMovePos[0]] = EmptyTile(boxMovePos[0], boxMovePos[1])
+    elif moveType == ICE:
+        playerX = movePos[0]
+        playerY = movePos[1]
+        drawBoard(board)
+        pygame.display.update()
+        FPSCLOCK.tick()
+        movePlayer(board, dir)
+    elif moveType == DOOR and not board[playerY][playerX].tileType == ICE:
         openNum = moveTile.keyNum
         for y in range(0, 3):
             for x in range(0, 3):
@@ -460,6 +530,42 @@ def movePlayer(board, dir):
                                     elif not (x1 == 2 and y1 == 2):
                                         INVENTORY[y1][x1] = INVENTORY[y1][x1 + 1]
                             return
+    elif moveType == DOOR and board[playerY][playerX].tileType == ICE:
+        openNum = moveTile.keyNum
+        for y in range(0, 3):
+            for x in range(0, 3):
+                itemTile = INVENTORY[y][x]
+                if not itemTile is None:
+                    if itemTile.itemType == KEY:
+                        if itemTile.keyNum == openNum:
+                            board[movePos[1]][movePos[0]] = EmptyTile(movePos[0], movePos[1])
+                            INVENTORY[y][x] = None
+                            for x1 in range(x, 3):
+                                if x1 == 2 and not y == 2:
+                                    INVENTORY[y][x1] = INVENTORY[y + 1][0]
+                                elif not (x1 == 2 and y == 2):
+                                    INVENTORY[y][x1] = INVENTORY[y][x1 + 1]
+                            for y1 in range(y + 1, 3):
+                                for x1 in range(0, 3):
+                                    if x1 == 2 and not y1 == 2:
+                                        INVENTORY[y1][x1] = INVENTORY[y1 + 1][0]
+                                    elif not (x1 == 2 and y1 == 2):
+                                        INVENTORY[y1][x1] = INVENTORY[y1][x1 + 1]
+                            playerY = movePos[1]
+                            playerX = movePos[0]
+                            return
+        movePlayer(board, dir * -1)
+    elif moveType == WALL and board[playerY][playerX].tileType == ICE:
+        movePlayer(board, dir * -1)
+    elif moveType == HINT:
+        playerX = movePos[0]
+        playerY = movePos[1]
+        if levelNum == 1:
+            gameHint(board, "just go down, $crublord")
+        elif levelNum == 2:
+            gameHint(board, "oops I lost my keys - you, 2019")
+        elif levelNum == 3:
+            gameHint(board, "lmao you shouldn't need a hint if you beat the other levels")
 
 
 
