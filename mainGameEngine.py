@@ -71,9 +71,23 @@ class DoorTile(BasicTile):
         self.keyNum = int(keyNumber)
 
 
-class EmptyTile(BasicTile):
+class EmptyTile(Sprite):
     def __init__(self, boardX, boardY):
-        BasicTile.__init__(self, boardX, boardY, "nullAndVoid.png", "_")
+        Sprite.__init__(self)
+
+        self.image = pygame.Surface((80, 80))
+        self.image.set_alpha(0)
+        self.rect = self.image.get_rect()
+
+        self.bX = boardX
+        self.bY = boardY
+
+        self.tileType = "_"
+        self.itemType = None
+
+
+    def __str__(self):
+        return ("A " + self.tileType + " at " + str(self.bX) + ", " + str(self.bY) + ".")
 
 
 class HintTile(BasicTile):
@@ -106,7 +120,7 @@ class BoxTile(BasicTile):
 
 class GoalTile(BasicTile):
     def __init__(self, boardX, boardY):
-        BasicTile.__init__(self, boardX, boardY, "", "G")
+        BasicTile.__init__(self, boardX, boardY, "2021ForJamesonJKLmao.png", "G")
 
 
 class FireShoesItem(BasicItem):
@@ -155,12 +169,14 @@ playerX = -1
 playerY = -1
 
 
+
 GREEN = (0, 0, 128)
 BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
 
 
-def main(level=1):
-    global FPSCLOCK, DISPLAYSURF, CHUMPFONT, SHOWNBOARD, CHUMP, SHOWNBOARDTOPLAYER, INVENTORY, SCORE
+def main(level=2):
+    global FPSCLOCK, DISPLAYSURF, CHUMPFONT, SHOWNBOARD, CHUMP, SHOWNBOARDTOPLAYER, INVENTORY, SCORE, DODEATH, PRINTEDTIMEDIFF
     pygame.init()
     DISPLAYSURF = pygame.display.set_mode((WINDOWSIZEX, WINDOWSIZEY))
     pygame.display.set_caption("Chump's Challenge")
@@ -178,6 +194,8 @@ def main(level=1):
             row.append(None)
         INVENTORY.append(row)
 
+    PRINTEDTIMEDIFF = int(pygame.time.get_ticks() / 1000)
+
     scoreStart = 0
     if level == 1:
         scoreStart = 1537
@@ -186,12 +204,15 @@ def main(level=1):
     elif level == 3:
         scoreStart = 600
     SCORE = scoreStart
+    DODEATH = False
 
     mousex = 0
     mousey = 0
     gamePlaying = True
 
     while True:
+        if DODEATH:
+            gameEnd(level)
         DISPLAYSURF.fill(BLACK)
         drawBoard(tileBoard)
         pygame.display.update()
@@ -202,6 +223,9 @@ def main(level=1):
         keyDir = ""
 
         SCORE = scoreStart - int(pygame.time.get_ticks() / 1000)
+
+        if int(pygame.time.get_ticks() / 1000) > 10000000:
+            gameTimeOut()
 
         for event in pygame.event.get():
             if event.type == QUIT or (event.type == KEYUP and event.key == K_ESCAPE):
@@ -230,8 +254,59 @@ def main(level=1):
             movePlayer(tileBoard, keyDir)
 
         if gameWin(tileBoard):
-            print("next level")
+            gameNext(level)
 
+def gameEnd(levelNum):
+    endGameLine1 = CHUMPFONT.render("You are mad because you are bad.", True, GREEN, WHITE)
+    endGameLine2 = CHUMPFONT.render("Press any key to just give up and start over,", True, GREEN, WHITE)
+    endGameLine3 = CHUMPFONT.render("like the chump you aspire to be",
+                                    True, GREEN, WHITE)
+    DISPLAYSURF.blit(endGameLine1, (100, 100))
+    DISPLAYSURF.blit(endGameLine2, (100, 160))
+    pygame.display.update()
+    bpress = False
+    while not bpress:
+        for event in pygame.event.get():
+            if event.type == QUIT or (event.type == KEYUP and event.key == K_ESCAPE):
+                pygame.quit()
+                sys.exit()
+            elif event.type == KEYUP:
+                main(levelNum)
+
+
+def gameNext(levelNum):
+    global PRINTEDTIMEDIFF
+    endGameLine1 = CHUMPFONT.render("You beat it, hopefully with dignity intact.", True, GREEN, WHITE)
+    endGameLine2 = CHUMPFONT.render("if this is the last level cognarts you beat it", True, GREEN, WHITE)
+    DISPLAYSURF.blit(endGameLine1, (100, 100))
+    DISPLAYSURF.blit(endGameLine2, (100, 160))
+    pygame.display.update()
+    bpress = False
+    while not bpress:
+        for event in pygame.event.get():
+            if event.type == QUIT or (event.type == KEYUP and event.key == K_ESCAPE):
+                pygame.quit()
+                sys.exit()
+            elif event.type == KEYUP and levelNum < 3:
+                PRINTEDTIMEDIFF = PRINTEDTIMEDIFF + int(pygame.time.get_ticks() / 1000)
+                main(levelNum + 1)
+
+
+def gameTimeOut():
+    endGameLine1 = CHUMPFONT.render("oops the hidden timer cap caught you better luck next time", True, GREEN, WHITE)
+    endGameLine2 = CHUMPFONT.render("bottom text", True, GREEN, WHITE)
+    DISPLAYSURF.blit(endGameLine1, (100, 100))
+    DISPLAYSURF.blit(endGameLine2, (100, 800))
+    pygame.display.update()
+    bpress = False
+    pygame.time.wait(1000)
+    while not bpress:
+        for event in pygame.event.get():
+            if event.type == QUIT or (event.type == KEYUP and event.key == K_ESCAPE):
+                pygame.quit()
+                sys.exit()
+            elif event.type == KEYUP:
+                exit()
 
 
 def getBoard(levelNum):
@@ -289,6 +364,8 @@ def getTextToTile(tileStr, x, y):
         return FireTile(x, y)
     elif tileStr == BOX:
         return BoxTile(x, y)
+    elif tileStr == GOAL:
+        return GoalTile(x, y)
     elif tileStr == SHOES:
         return FireShoesItem(x, y)
     elif tileStr == KEY1:
@@ -304,7 +381,7 @@ def getTextToTile(tileStr, x, y):
 
 
 def gameWin(board):
-    return False
+    return board[playerY][playerX].tileType == GOAL
 
 
 def tileInDir(x, y, dir):
@@ -318,18 +395,32 @@ def tileInDir(x, y, dir):
         return (x + 1, y)
 
 
+def kicksInInv():
+    for y in range(0, 3):
+        for x in range(0, 3):
+            itemTile = INVENTORY[y][x]
+            if not itemTile is None:
+                if itemTile.itemType == SHOES:
+                    return True
+    return False
+
+
 def movePlayer(board, dir):
-    global playerX, playerY, INVENTORY
+    global playerX, playerY, INVENTORY, DODEATH
     movePos = tileInDir(playerX, playerY, dir)
     moveTile = board[movePos[1]][movePos[0]]
     moveType = moveTile.tileType
-    if moveType == EMPTY:
+    if moveType == EMPTY or moveType == GOAL or (moveType == FIRE and kicksInInv()):
         playerX = movePos[0]
         playerY = movePos[1]
         if not moveTile.itemType is None:
             invX, invY = getEmptyInventorySpace()
             INVENTORY[invY][invX] = moveTile
             board[movePos[1]][movePos[0]] = EmptyTile(movePos[0], movePos[1])
+    elif (moveType == FIRE and not kicksInInv()) or moveType == WATER:
+        playerX = movePos[0]
+        playerY = movePos[1]
+        DODEATH = True
     elif moveType == BOX:
         boxMovePos = tileInDir(movePos[0], movePos[1], dir)
         boxMoveTile = board[boxMovePos[1]][boxMovePos[0]]
@@ -424,7 +515,7 @@ def invToCoord(x, y):
 
 def drawClock(new=False):
     FPSCLOCK.tick(FPS)
-    timeNum = int(pygame.time.get_ticks() / 1000)
+    timeNum = int(pygame.time.get_ticks() / 1000) - PRINTEDTIMEDIFF
     timeStr = str(int(timeNum % 60))
     timeNum = timeNum - (timeNum % 60)
     minnum = 0
