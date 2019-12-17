@@ -188,7 +188,7 @@ WHITE = (255, 255, 255)
 
 
 def main(level=1):
-    global FPSCLOCK, DISPLAYSURF, CHUMPFONT, SHOWNBOARD, CHUMP, SHOWNBOARDTOPLAYER, INVENTORY, SCORE, DODEATH, PRINTEDTIMEDIFF, WATERSINKS
+    global FPSCLOCK, DISPLAYSURF, CHUMPFONT, SHOWNBOARD, CHUMP, SHOWNBOARDTOPLAYER, INVENTORY, SCORE, DODEATH, PRINTEDTIMEDIFF, WATERSINKS, playerX, playerY, monsterX, monsterY, MonsterHere
     pygame.init()
     DISPLAYSURF = pygame.display.set_mode((WINDOWSIZEX, WINDOWSIZEY))
     pygame.display.set_caption("Chump's Challenge")
@@ -212,15 +212,11 @@ def main(level=1):
     if level == 1:
         scoreStart = 1537
     elif level == 2:
-        scoreStart = 540
+        scoreStart = 540 + 1537 - PRINTEDTIMEDIFF
     elif level == 3:
-        scoreStart = 600
+        scoreStart = 600 + 540 + 1537 - PRINTEDTIMEDIFF
     SCORE = scoreStart
     DODEATH = False
-
-    mousex = 0
-    mousey = 0
-    gamePlaying = True
 
     while True:
         if DODEATH:
@@ -229,8 +225,6 @@ def main(level=1):
         drawBoard(tileBoard)
         pygame.display.update()
         FPSCLOCK.tick()
-
-        mouseDown = False
         keyPress = False
         keyDir = 0
 
@@ -256,14 +250,33 @@ def main(level=1):
                 elif event.key == K_DOWN:
                     keyPress = True
                     keyDir = DIRDOWN
-            elif event.type == MOUSEMOTION:
-                mousex, mousey = event.pos
-            elif event.type == MOUSEBUTTONUP:
-                mousex, mousey = event.pos
-                mouseDown = True
 
-        if keyPress and gamePlaying:
+        if keyPress:
             movePlayer(tileBoard, keyDir, level)
+            if level == 1:
+                if abs(playerY - monsterY) > abs(playerX - monsterX):
+                    if playerY > monsterY:
+                        dirMons = DIRDOWN
+                    else:
+                        dirMons = DIRUP
+                else:
+                    if playerX > monsterX:
+                        dirMons = DIRRIGHT
+                    else:
+                        dirMons = DIRLEFT
+
+                monsMovePos = tileInDir(monsterX, monsterY, dirMons)
+                phold = tileBoard[monsterY][monsterX]
+                tileBoard[monsterY][monsterX] = EmptyTile(monsterX, monsterY)
+                tileBoard[monsMovePos[1]][monsMovePos[0]] = phold
+                monsterX = monsMovePos[0]
+                monsterY = monsMovePos[1]
+
+
+            if (playerY == monsterY and playerX == monsterX):
+                drawBoard(tileBoard)
+                pygame.display.update()
+                DODEATH = True
 
         if gameWin(tileBoard):
             gameNext(level)
@@ -447,27 +460,8 @@ def movePlayer(board, dir, levelNum):
         if sitch[2] < 1:
             board[sitch[1]][sitch[0]] = sitch[3]
             WATERSINKS.remove(sitch)
-    if MonsterHere:
-        if abs(playerY - monsterY) > abs(playerX - monsterX):
-            if playerY > monsterY:
-                dirMons = DIRDOWN
-            else:
-                dirMons = DIRUP
-        else:
-            if playerX > monsterX:
-                dirMons = DIRRIGHT
-            else:
-                dirMons = DIRLEFT
 
-        monsMovePos = tileInDir(monsterX, monsterY, dirMons)
-        phold = board[monsterY][monsterX]
-        board[monsterY][monsterX] = EmptyTile(monsterX, monsterY)
-        board[monsMovePos[1]][monsMovePos[0]] = phold
-        monsterX = monsMovePos[0]
-        monsterY = monsMovePos[1]
-    if (playerY == monsterY and playerX == monsterX):
-        DODEATH = True
-    elif (moveType == FIRE and not kicksInInv()) or moveType == WATER:
+    if (moveType == FIRE and not kicksInInv()) or moveType == WATER:
         playerX = movePos[0]
         playerY = movePos[1]
         DODEATH = True
@@ -498,7 +492,7 @@ def movePlayer(board, dir, levelNum):
         elif boxMoveType == WATER:
             playerX = movePos[0]
             playerY = movePos[1]
-            WATERSINKS.append([boxMovePos[0], boxMovePos[1], 15, board[boxMovePos[1]][boxMovePos[0]]])
+            WATERSINKS.append([boxMovePos[0], boxMovePos[1], 24, board[boxMovePos[1]][boxMovePos[0]]])
             board[movePos[1]][movePos[0]] = EmptyTile(movePos[0], movePos[1])
             board[boxMovePos[1]][boxMovePos[0]] = EmptyTile(boxMovePos[0], boxMovePos[1])
     elif moveType == ICE:
@@ -507,7 +501,7 @@ def movePlayer(board, dir, levelNum):
         drawBoard(board)
         pygame.display.update()
         FPSCLOCK.tick()
-        movePlayer(board, dir)
+        movePlayer(board, dir, levelNum)
     elif moveType == DOOR and not board[playerY][playerX].tileType == ICE:
         openNum = moveTile.keyNum
         for y in range(0, 3):
@@ -554,9 +548,9 @@ def movePlayer(board, dir, levelNum):
                             playerY = movePos[1]
                             playerX = movePos[0]
                             return
-        movePlayer(board, dir * -1)
+        movePlayer(board, dir * -1, levelNum)
     elif moveType == WALL and board[playerY][playerX].tileType == ICE:
-        movePlayer(board, dir * -1)
+        movePlayer(board, dir * -1, levelNum)
     elif moveType == HINT:
         playerX = movePos[0]
         playerY = movePos[1]
@@ -565,7 +559,7 @@ def movePlayer(board, dir, levelNum):
         elif levelNum == 2:
             gameHint(board, "oops I lost my keys - you, 2019")
         elif levelNum == 3:
-            gameHint(board, "lmao you shouldn't need a hint if you beat the other levels")
+            gameHint(board, "you shouldn't need a hint if you beat the other levels")
 
 
 
@@ -594,6 +588,7 @@ def drawBoard(board):
 
     for y in range(tEdge, bEdge):
         for x in range(lEdge, rEdge):
+            print(str(x) + ' , ' + str(y))
             board[y][x].rect.x = boardToCoord(x - lEdge)
             board[y][x].rect.y = boardToCoord(y - tEdge)
             SHOWNBOARD.add(board[y][x])
