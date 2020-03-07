@@ -182,7 +182,7 @@ MonsterHere = False
 
 WATERSINKS = []
 
-GREEN = (0, 0, 128)
+GREEN = (0, 0, 125)
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 
