@@ -210,7 +210,7 @@ def main(level=1):
 
     scoreStart = 0
     if level == 1:
-        scoreStart = 1537
+        scoreStart = 40000
     elif level == 2:
         scoreStart = 540 + 1537 - PRINTEDTIMEDIFF
     elif level == 3:
